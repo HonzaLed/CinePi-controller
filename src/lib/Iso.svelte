@@ -96,7 +96,7 @@
     //SWIPE END
 </script>
 
-<button class="border border-1 border-gray-800" on:touchstart={handleTouchStart} on:touchmove|preventDefault={handleTouchMove} on:click={handleClick}>
+<button class="border border-1 border-gray-800 -mt-8" on:touchstart={handleTouchStart} on:touchmove|preventDefault={handleTouchMove} on:click={handleClick}>
 	<p class="text-gray-500"><b>ISO</b></p>
 	<p class="text-2xl">{iso}</p>
 </button>
