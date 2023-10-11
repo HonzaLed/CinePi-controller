@@ -2,12 +2,14 @@
 	import Stream from '$lib/Stream.svelte';
 	import Iso from '$lib/Iso.svelte';
 	import ShutterAngle from '$lib/ShutterAngle.svelte';
-	import Fps from '$lib/Fps.svelte'
+	import Fps from '$lib/Fps.svelte';
+	import socket from '$lib/websocket.js';
 	import { onMount } from 'svelte';
 
 	let hostname = '';
-	let srcOverride = "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/16x9_by_Pengo.svg/1920px-16x9_by_Pengo.svg.png";
+	let srcOverride = 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/16x9_by_Pengo.svg/1920px-16x9_by_Pengo.svg.png';
 	let running = true;
+	let errorMessage = "";
 
 	let state = {
 		recording: false,
@@ -17,16 +19,23 @@
 		minIso: 100,
 		shutterAngle: 180,
 		fps: 24
-	}
+	};
 
 	onMount(() => {
 		hostname = document.location.hostname;
+		if (!socket.connect(`ws:${hostname}:8080/ws`)) {
+			running = false;
+			console.error('Got fatal error from websocket, look in the console for more details');
+			errorMessage = "WebSocket connection failed!";
+		}
 	});
 
 	// State update (send data to API)
 	$: {
-		console.log("Got a new state update:", state);
-		// do the API stuff here
+		console.log(`Got a new state update: ${state}, sending to websocket!`);
+		if (!socket.sendMessage(JSON.stringify(state))) {
+			console.warn("Could not send a state update!");
+		}
 	}
 
 	// @ts-ignore
@@ -35,9 +44,9 @@
 			console.warn(`Got error from stream: ${event.detail.error}`);
 		} else {
 			console.error(`Got fatal error from stream: ${event.detail.error}`);
+			errorMessage = `Got fatal error from stream: ${event.detail.error}`;
 			running = false;
-			srcOverride = "/ui/failed-stream.jpg";
-
+			srcOverride = '/ui/failed-stream.jpg';
 		}
 	}
 
@@ -61,7 +70,6 @@
 		state.fps = fps;
 	}
 
-
 	function toogleRecord() {
 		state.recording = !state.recording;
 	}
@@ -70,16 +78,27 @@
 	}
 </script>
 
-<div class="min-h-screen h-screen w-screen flex flex-col items-center justify-center bg-black">
+<div
+	class="min-h-screen h-screen w-screen flex flex-col items-center justify-center bg-black"
+	style={running ? '' : 'display:none'}
+>
 	<div class="grid grid-cols-8 grid-rows-1 gap-0 min-h-screen">
-
 		<!-- Left side controls -->
 		<div class="grid grid-cols-1 gap-0 text-white bg-gray-950">
 			<!-- Lock button -->
 			<button class="border border-1 border-gray-800 h-3/4" on:click={toogleLocked}>
-				<img src={state.locked ? "/ui/locked_lock.png" : "/ui/unlocked_lock.png"} alt="Lock button" class="mx-auto h-5/6" />
+				<img
+					src={state.locked ? '/ui/locked_lock.png' : '/ui/unlocked_lock.png'}
+					alt="Lock button"
+					class="mx-auto h-5/6"
+				/>
 			</button>
-			<ShutterAngle shutterAngle={state.shutterAngle} locked={state.locked} on:changeShutterAngle={handleChangeShutterAngle} />
+			<!-- Shutter Angle -->
+			<ShutterAngle
+				shutterAngle={state.shutterAngle}
+				locked={state.locked}
+				on:changeShutterAngle={handleChangeShutterAngle}
+			/>
 			<Fps fps={state.fps} locked={state.locked} on:changeFPS={handleChangeFPS} />
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
@@ -89,22 +108,27 @@
 		</div>
 
 		<!-- Stream image -->
-		<div class="stream-container col-span-6 place-self-center" 	>
-			<Stream
-				on:error={handleStreamError}
-				{hostname}
-				{srcOverride}
-			/>
+		<div class="stream-container col-span-6 place-self-center">
+			<Stream on:error={handleStreamError} {hostname} {srcOverride} />
 		</div>
 		<!-- Right side controls -->
 		<div class="grid grid-cols-1 grid-rows-8 gap-0 text-white bg-gray-950">
 			<!-- Record button -->
 			<button on:click={toogleRecord} class="border border-1 border-gray-800 h-3/4">
-				<img src={state.recording ? "/ui/stop_recording.png" : "/ui/record.png"} alt="Record button" class="mx-auto h-5/6"/>
+				<img
+					src={state.recording ? '/ui/stop_recording.png' : '/ui/record.png'}
+					alt="Record button"
+					class="mx-auto h-5/6"
+				/>
 			</button>
 			<!-- ISO -->
-			<Iso iso={state.iso} maxIso={state.maxIso} minIso={state.minIso} locked={state.locked} on:changeISO={handleChangeISO} />
-			<!-- Shutter Angle -->
+			<Iso
+				iso={state.iso}
+				maxIso={state.maxIso}
+				minIso={state.minIso}
+				locked={state.locked}
+				on:changeISO={handleChangeISO}
+			/>
 			<button class="border border-1 border-gray-800">3</button>
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
@@ -112,6 +136,10 @@
 			<button class="border border-1 border-gray-800">7</button>
 			<button class="border border-1 border-gray-800">8</button>
 		</div>
-
 	</div>
+</div>
+
+<div class="text-white bg-black text-center min-h-screen items-center grid grid-rows-2" style="{running ? "display:none" : ""}">
+	<h1 class="self-center text-2xl"><b class="text-6xl">Client encountered a fatal error, can't continue!</b><br>Error: {errorMessage}</h1>
+	<button class="bg-gray-800 w-min mx-auto rounded-2xl p-2 border-gray-700 border-2 text-6xl" on:click={()=>{location.reload()}}>Refresh</button>
 </div>
