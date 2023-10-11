@@ -7,7 +7,7 @@
     "scope": "/",
     "theme_color": "#000000",
     "description": "Web app for controlling CinePi V2 cameras",
-    "display": "standalone",
+    "display": "fullscreen",
     "orientation": "landscape",
     "icons": [
       {

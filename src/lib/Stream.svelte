@@ -16,6 +16,9 @@
     let checkInterval;
     let checkTimeout = 5000; // 5 seconds for the activity check
 
+    /**
+	 * @type {HTMLImageElement}
+	 */
     let imgElem;
 
     onMount(() => {
@@ -80,4 +83,4 @@
 </script>
 
 
-<img bind:this={imgElem} class="mjpeg-stream" on:error={handleStreamError} src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/16x9_by_Pengo.svg/1920px-16x9_by_Pengo.svg.png" alt="Stream preview">
+<img bind:this={imgElem} class="mjpeg-stream object-cover" on:error={handleStreamError} src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/16x9_by_Pengo.svg/1920px-16x9_by_Pengo.svg.png" alt="Stream preview">
