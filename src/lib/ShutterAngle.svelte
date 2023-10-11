@@ -1,24 +1,19 @@
 <script>
-    // @ts-nocheck
-    import { onMount } from 'svelte';
     import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
-    const DefaultIsoList = [50, 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600]
-	export let iso = 100;
-    export let maxIso = 6400;
-    export let minIso = 100;
+    const shutterAngleList = [45, 90, 135, 172.8, 180, 225, 270, 315, 346.6, 360]
+	export let shutterAngle = 180;
     export let locked = false;
-    let isoList = DefaultIsoList;
     /**
 	 * @type {number}
 	 */
-    let isoIndex;
+    let shutterAngleIndex;
 
     $: {
-        dispatch("changeISO", {
-            iso: iso
+        dispatch("changeShutterAngle", {
+            shutterAngle: shutterAngle
         });
     }
 
@@ -31,15 +26,9 @@
 	 */
     let initialSwipeY = null;
 
-    // Set isoList to start at minIso and end at maxIso
-    onMount( () => {
-        isoList = DefaultIsoList.slice(DefaultIsoList.indexOf(minIso), DefaultIsoList.indexOf(maxIso)+1)
-        console.log(isoList)
-    })
-
-    function setNewIso(newIso) {
-        if (!locked && (newIso <= maxIso && newIso >= minIso)) {
-            iso = newIso
+    function setNewShutterAngle(newShutterAngle) {
+        if (!locked) {
+            shutterAngle = newShutterAngle
         }
     }
 
@@ -48,18 +37,18 @@
 	 */
     function handleSwipe(diffY) {
         let indexChange = Math.round(diffY / 30);
-        let newIsoIndex = isoIndex+indexChange;
-        if (newIsoIndex >= 0 && newIsoIndex < isoList.length) {
-            setNewIso(isoList[newIsoIndex]);
+        let newShutterAngleIndex = shutterAngleIndex+indexChange;
+        if (newShutterAngleIndex >= 0 && newShutterAngleIndex < shutterAngleList.length) {
+            setNewShutterAngle(shutterAngleList[newShutterAngleIndex]);
         }
     }
 
     function handleClick() {
-        let newIsoIndex = isoList.indexOf(iso) +1;
-        if (newIsoIndex >= isoList.length) {
-            newIsoIndex = 0;
+        let newShutterAngleIndex = shutterAngleList.indexOf(shutterAngle) +1;
+        if (newShutterAngleIndex >= shutterAngleList.length) {
+            newShutterAngleIndex = 0;
         }
-        setNewIso(isoList[newIsoIndex]);
+        setNewShutterAngle(shutterAngleList[newShutterAngleIndex]);
     }
     
     /**
@@ -68,7 +57,7 @@
     function handleTouchStart(event) {
         initialSwipeX = event.touches[0].clientX;
         initialSwipeY = event.touches[0].clientY;
-        isoIndex = isoList.indexOf(iso);
+        shutterAngleIndex = shutterAngleList.indexOf(shutterAngle);
     };
     
     /**
@@ -96,6 +85,6 @@
     };
 </script>
 <button class="border border-1 border-gray-800 -mt-8" on:touchstart={handleTouchStart} on:touchmove|preventDefault={handleTouchMove} on:click={handleClick}>
-	<p class="text-gray-500"><b>ISO</b></p>
-	<p class="text-2xl">{iso}</p>
+	<p class="text-gray-500 text-sm"><b>Shutter angle</b></p>
+	<p class="text-2xl">{shutterAngle}°</p>
 </button>

@@ -1,24 +1,20 @@
 <script>
     // @ts-nocheck
-    import { onMount } from 'svelte';
     import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
-    const DefaultIsoList = [50, 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600]
-	export let iso = 100;
-    export let maxIso = 6400;
-    export let minIso = 100;
+    const fpsList = [1, 2, 4, 8, 16, 18, 24, 25, 33, 48, 50]
+	export let fps = 24;
     export let locked = false;
-    let isoList = DefaultIsoList;
     /**
 	 * @type {number}
 	 */
-    let isoIndex;
+    let fpsIndex;
 
     $: {
-        dispatch("changeISO", {
-            iso: iso
+        dispatch("changeFPS", {
+            fps: fps
         });
     }
 
@@ -31,15 +27,12 @@
 	 */
     let initialSwipeY = null;
 
-    // Set isoList to start at minIso and end at maxIso
-    onMount( () => {
-        isoList = DefaultIsoList.slice(DefaultIsoList.indexOf(minIso), DefaultIsoList.indexOf(maxIso)+1)
-        console.log(isoList)
-    })
-
-    function setNewIso(newIso) {
-        if (!locked && (newIso <= maxIso && newIso >= minIso)) {
-            iso = newIso
+    /**
+	 * @param {number} newFPS
+	 */
+    function setNewFPS(newFPS) {
+        if (!locked) {
+            fps = newFPS
         }
     }
 
@@ -48,18 +41,18 @@
 	 */
     function handleSwipe(diffY) {
         let indexChange = Math.round(diffY / 30);
-        let newIsoIndex = isoIndex+indexChange;
-        if (newIsoIndex >= 0 && newIsoIndex < isoList.length) {
-            setNewIso(isoList[newIsoIndex]);
+        let newFPSIndex = fpsIndex+indexChange;
+        if (newFPSIndex >= 0 && newFPSIndex < fpsList.length) {
+            setNewFPS(fpsList[newFPSIndex]);
         }
     }
 
     function handleClick() {
-        let newIsoIndex = isoList.indexOf(iso) +1;
-        if (newIsoIndex >= isoList.length) {
-            newIsoIndex = 0;
+        let newFPSIndex = fpsList.indexOf(fps) +1;
+        if (newFPSIndex >= fpsList.length) {
+            newFPSIndex = 0;
         }
-        setNewIso(isoList[newIsoIndex]);
+        setNewFPS(fpsList[newFPSIndex]);
     }
     
     /**
@@ -68,7 +61,7 @@
     function handleTouchStart(event) {
         initialSwipeX = event.touches[0].clientX;
         initialSwipeY = event.touches[0].clientY;
-        isoIndex = isoList.indexOf(iso);
+        fpsIndex = fpsList.indexOf(fps);
     };
     
     /**
@@ -95,7 +88,7 @@
         }
     };
 </script>
-<button class="border border-1 border-gray-800 -mt-8" on:touchstart={handleTouchStart} on:touchmove|preventDefault={handleTouchMove} on:click={handleClick}>
-	<p class="text-gray-500"><b>ISO</b></p>
-	<p class="text-2xl">{iso}</p>
+<button class="border border-1 border-gray-800" on:touchstart={handleTouchStart} on:touchmove|preventDefault={handleTouchMove} on:click={handleClick}>
+	<p class="text-gray-500"><b>FPS</b></p>
+	<p class="text-2xl">{fps}</p>
 </button>

@@ -1,6 +1,8 @@
 <script>
 	import Stream from '$lib/Stream.svelte';
 	import Iso from '$lib/Iso.svelte';
+	import ShutterAngle from '$lib/ShutterAngle.svelte';
+	import Fps from '$lib/Fps.svelte'
 	import { onMount } from 'svelte';
 
 	let hostname = '';
@@ -12,17 +14,20 @@
 		locked: false,
 		iso: 100,
 		maxIso: 6400,
-		minIso: 100
-	}
-
-	$: {
-		console.log("Got a new state update:", state);
-		// do the API stuff here
+		minIso: 100,
+		shutterAngle: 180,
+		fps: 24
 	}
 
 	onMount(() => {
 		hostname = document.location.hostname;
 	});
+
+	// State update (send data to API)
+	$: {
+		console.log("Got a new state update:", state);
+		// do the API stuff here
+	}
 
 	// @ts-ignore
 	function handleStreamError(event) {
@@ -35,15 +40,28 @@
 
 		}
 	}
+
+	// Handlers for ISO/shutter angle/FPS changes
 	// @ts-ignore
 	function handleChangeISO(event) {
 		let iso = event.detail.iso;
-		if (iso > state.maxIso && iso < state.minIso) {
-			console.warn(`Cannot set ISO ${iso}`);
-		}
 		console.log(`Got new ISO: ${iso}`);
 		state.iso = iso;
 	}
+	// @ts-ignore
+	function handleChangeShutterAngle(event) {
+		let shutterAngle = event.detail.shutterAngle;
+		console.log(`Got new shutter angle: ${shutterAngle}`);
+		state.shutterAngle = shutterAngle;
+	}
+	// @ts-ignore
+	function handleChangeFPS(event) {
+		let fps = event.detail.fps;
+		console.log(`Got new FPS: ${fps}`);
+		state.fps = fps;
+	}
+
+
 	function toogleRecord() {
 		state.recording = !state.recording;
 	}
@@ -61,8 +79,8 @@
 			<button class="border border-1 border-gray-800 h-3/4" on:click={toogleLocked}>
 				<img src={state.locked ? "/ui/locked_lock.png" : "/ui/unlocked_lock.png"} alt="Lock button" class="mx-auto h-5/6" />
 			</button>
-			<button class="border border-1 border-gray-800 -mt-8">2</button>
-			<button class="border border-1 border-gray-800">3</button>
+			<ShutterAngle shutterAngle={state.shutterAngle} locked={state.locked} on:changeShutterAngle={handleChangeShutterAngle} />
+			<Fps fps={state.fps} locked={state.locked} on:changeFPS={handleChangeFPS} />
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
 			<button class="border border-1 border-gray-800">6</button>
@@ -86,6 +104,7 @@
 			</button>
 			<!-- ISO -->
 			<Iso iso={state.iso} maxIso={state.maxIso} minIso={state.minIso} locked={state.locked} on:changeISO={handleChangeISO} />
+			<!-- Shutter Angle -->
 			<button class="border border-1 border-gray-800">3</button>
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
