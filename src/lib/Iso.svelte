@@ -8,6 +8,7 @@
 	export let iso = 100;
     export let maxIso = 6400;
     export let minIso = 100;
+    export let locked = false;
     let isoList = DefaultIsoList;
     /**
 	 * @type {number}
@@ -35,6 +36,11 @@
         console.log(isoList)
     })
 
+    function setNewIso(newIso) {
+        if (!locked && (newIso <= maxIso && newIso >= minIso)) {
+            iso = newIso
+        }
+    }
 
     /**
 	 * @param {number} diffY
@@ -43,7 +49,7 @@
         let indexChange = Math.round(diffY / 30);
         let newIsoIndex = isoIndex+indexChange;
         if (newIsoIndex >= 0 && newIsoIndex < isoList.length) {
-            iso = isoList[newIsoIndex];
+            setNewIso(isoList[newIsoIndex]);
         }
     }
 
@@ -52,7 +58,7 @@
         if (newIsoIndex >= isoList.length) {
             newIsoIndex = 0;
         }
-        iso = isoList[newIsoIndex];
+        setNewIso(isoList[newIsoIndex]);
     }
     
     /**

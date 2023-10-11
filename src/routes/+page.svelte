@@ -9,6 +9,7 @@
 
 	let state = {
 		recording: false,
+		locked: false,
 		iso: 100,
 		maxIso: 6400,
 		minIso: 100
@@ -16,6 +17,7 @@
 
 	$: {
 		console.log("Got a new state update:", state);
+		// do the API stuff here
 	}
 
 	onMount(() => {
@@ -43,7 +45,10 @@
 		state.iso = iso;
 	}
 	function toogleRecord() {
-		state.recording = !state.recording
+		state.recording = !state.recording;
+	}
+	function toogleLocked() {
+		state.locked = !state.locked;
 	}
 </script>
 
@@ -51,8 +56,11 @@
 	<div class="grid grid-cols-8 grid-rows-1 gap-0 min-h-screen">
 
 		<!-- Left side controls -->
-		<div class="grid grid-cols-1 grid-rows-6 gap-0 text-white bg-gray-950">
-			<button class="border border-1 border-gray-800">1</button>
+		<div class="grid grid-cols-1 grid-rows-8 gap-0 text-white bg-gray-950">
+			<!-- Lock button -->
+			<button class="border border-1 border-gray-800" on:click={toogleLocked}>
+				<img src={state.locked ? "/ui/locked_lock.png" : "/ui/unlocked_lock.png"} alt="Lock button" class="mx-auto" />
+			</button>
 			<button class="border border-1 border-gray-800">2</button>
 			<button class="border border-1 border-gray-800">3</button>
 			<button class="border border-1 border-gray-800">4</button>
@@ -74,10 +82,10 @@
 		<div class="grid grid-cols-1 grid-rows-8 gap-0 text-white bg-gray-950">
 			<!-- Record button -->
 			<button on:click={toogleRecord} class="border border-1 border-gray-800">
-				<img src={state.recording ? "/ui/stop_recording.png" : "/ui/record.png"} alt="Record button" class="object-scale-down h-content"/>
+				<img src={state.recording ? "/ui/stop_recording.png" : "/ui/record.png"} alt="Record button" class="mx-auto"/>
 			</button>
 			<!-- ISO -->
-			<Iso iso={state.iso} maxIso={state.maxIso} minIso={state.minIso} on:changeISO={handleChangeISO}/>
+			<Iso iso={state.iso} maxIso={state.maxIso} minIso={state.minIso} locked={state.locked} on:changeISO={handleChangeISO} />
 			<button class="border border-1 border-gray-800">3</button>
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
