@@ -66,7 +66,6 @@
 			console.error(`Got fatal error from stream: ${event.detail.error}`);
 			errorMessage = `Got fatal error from stream: ${event.detail.error}`;
 			running = false;
-			srcOverride = '/ui/failed-stream.jpg';
 		}
 	}
 
