@@ -10,10 +10,11 @@
 	let srcOverride = 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/16x9_by_Pengo.svg/1920px-16x9_by_Pengo.svg.png';
 	let running = true;
 	let errorMessage = "";
+	let locked= false;
+	let websocketErrorCount = 0;
 
 	let state = {
 		recording: false,
-		locked: false,
 		iso: 100,
 		maxIso: 6400,
 		minIso: 100,
@@ -23,19 +24,38 @@
 
 	onMount(() => {
 		hostname = document.location.hostname;
-		if (!socket.connect(`ws:${hostname}:8080/ws`)) {
-			running = false;
-			console.error('Got fatal error from websocket, look in the console for more details');
-			errorMessage = "WebSocket connection failed!";
-		}
+
+		socket.errorNotifier.subscribe( (error) => {
+			if (error != "") {
+				running = false;
+				console.error('Got fatal error from websocket:', error);
+				errorMessage = "WebSocket error: " + error;
+			}
+		});
+		socket.subscribe( (message) => {
+			console.log("Got new WebSocket message:", message);
+			try {
+				state = JSON.parse(message);
+			} catch {
+				console.warn("Could not update state from received websocket message!");
+			}
+		});
+
+		socket.connect(`ws:${hostname}:8080/ws`);
 	});
 
 	// State update (send data to API)
-	$: {
-		console.log(`Got a new state update: ${state}, sending to websocket!`);
-		if (!socket.sendMessage(JSON.stringify(state))) {
+	$: if (!socket.sendMessage(JSON.stringify(state))) {
+			if (websocketErrorCount > 5) {
+				running = false;
+				console.log("Got fatal error from websocket: Couldn't send update to the server 5 times!")
+				errorMessage = "WebSocket error: Couldn't send update to the server 5 times!";
+			}
 			console.warn("Could not send a state update!");
-		}
+			websocketErrorCount++;
+	} else {
+		console.log("Sent update to the server!");
+		websocketErrorCount = 0;
 	}
 
 	// @ts-ignore
@@ -74,7 +94,7 @@
 		state.recording = !state.recording;
 	}
 	function toogleLocked() {
-		state.locked = !state.locked;
+		locked = !locked;
 	}
 </script>
 
@@ -88,7 +108,7 @@
 			<!-- Lock button -->
 			<button class="border border-1 border-gray-800 h-3/4" on:click={toogleLocked}>
 				<img
-					src={state.locked ? '/ui/locked_lock.png' : '/ui/unlocked_lock.png'}
+					src={locked ? '/ui/locked_lock.png' : '/ui/unlocked_lock.png'}
 					alt="Lock button"
 					class="mx-auto h-5/6"
 				/>
@@ -96,10 +116,10 @@
 			<!-- Shutter Angle -->
 			<ShutterAngle
 				shutterAngle={state.shutterAngle}
-				locked={state.locked}
+				locked={locked}
 				on:changeShutterAngle={handleChangeShutterAngle}
 			/>
-			<Fps fps={state.fps} locked={state.locked} on:changeFPS={handleChangeFPS} />
+			<Fps fps={state.fps} locked={locked} on:changeFPS={handleChangeFPS} />
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
 			<button class="border border-1 border-gray-800">6</button>
@@ -126,7 +146,7 @@
 				iso={state.iso}
 				maxIso={state.maxIso}
 				minIso={state.minIso}
-				locked={state.locked}
+				locked={locked}
 				on:changeISO={handleChangeISO}
 			/>
 			<button class="border border-1 border-gray-800">3</button>

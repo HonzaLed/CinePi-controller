@@ -1,17 +1,17 @@
 import { writable } from 'svelte/store';
 
 const messageStore = writable('');
+const errorStore = writable('');
 /**
  * @type {WebSocket | null}
  */
 let socket = null;
-let error = false;
 
 /**
  * @param {string | URL} url
  */
 function connect(url) {
-    error = false;
+    errorStore.set('');
 
     if ("WebSocket" in window) {
         socket = new WebSocket(url);
@@ -26,14 +26,13 @@ function connect(url) {
         }
 
         socket.onerror = (event) => {
-            console.error("WebSocket error: Can't connect to the server!");
-            error = true;
+            console.error("Can't connect to the server!");
+            errorStore.set("Can't connect to the server!");
         }
     } else {
-        console.error("WebSocket error: This browser doesn't support websockets, can't run here!");
-        error = true;
+        console.error("This browser doesn't support websockets, can't run here!");
+        errorStore.set("This browser doesn't support websockets, can't run here!");
     }
-    return error;
 }
 
 /**
@@ -51,6 +50,7 @@ export default {
 	subscribe: messageStore.subscribe,
 	sendMessage,
     connect,
-    webSocket: socket
+    socket: socket,
+    errorNotifier: errorStore
 }
 
