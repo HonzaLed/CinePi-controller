@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+</head>
+
+<body>
+  <canvas id="histogram" width="256" height="100"></canvas>
+  <img id="image" src="http://127.0.0.1:8008/cam.mjpeg" />
+  <script>
+    const image = document.getElementById("image");
+    image.src = "http://" + document.location.host + "/cam.mjpeg"
+
+    const canvas = document.getElementById("histogram");
+    canvas.height = 100;
+    canvas.width = 256;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    function updateHistogram() {
+      // Capture a frame from the stream
+      ctx.drawImage(image, 0, 0, image.width, image.height);
+
+      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const histogramR = new Array(256).fill(0);
+      const histogramG = new Array(256).fill(0);
+      const histogramB = new Array(256).fill(0);
+
+      for (let i = 0; i < data.length; i += 4) {
+        // The data array is in rgb format (4 bytes per pixel)
+        const pixelValueR = data[i];   // Red channel value
+        const pixelValueG = data[i+1]; // Green channel value
+        const pixelValueB = data[i+2]; // Blue channel value
+
+        // Increment the corresponding bin in the histogram
+        histogramR[pixelValueR]++;
+        histogramG[pixelValueG]++;
+        histogramB[pixelValueB]++;
+      }
+
+      // Normalize the histogram
+      const maxCount = Math.max(...histogramR, ...histogramG, ...histogramB);
+      const scaleFactor = 100 / maxCount;
+
+      const normalizedHistogramR = histogramR.map(count => count * scaleFactor);
+      const normalizedHistogramG = histogramG.map(count => count * scaleFactor);
+      const normalizedHistogramB = histogramB.map(count => count * scaleFactor);
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "lighter";
+      // normalizedHistogramR.forEach((value, index) => {
+      //   ctx.fillStyle = "rgb(255,0,0)";
+      //   ctx.fillRect(index, canvas.height - value, 1, value);
+      // });
+      // normalizedHistogramG.forEach((value, index) => {
+      //   ctx.fillStyle = "rgb(0,255,0)";
+      //   ctx.fillRect(index, canvas.height - value, 1, value);
+      // });
+      // normalizedHistogramB.forEach((value, index) => {
+      //   ctx.fillStyle = "rgb(0,0,255)";
+      //   ctx.fillRect(index, canvas.height - value, 1, value);
+      // });
+      for(let index=0; index<normalizedHistogramR.length; index++) {
+        valueR = normalizedHistogramR[index];
+        valueG = normalizedHistogramG[index];
+        valueB = normalizedHistogramB[index];
+        ctx.fillStyle = "red";
+        ctx.fillRect(index, 100 - valueR, 1, valueR);
+        ctx.fillStyle = "green";
+        ctx.fillRect(index, 100 - valueG, 1, valueG);
+        ctx.fillStyle = "blue";
+        ctx.fillRect(index, 100 - valueB, 1, valueB);
+      }
+
+      requestAnimationFrame(updateHistogram);
+    }
+    image.addEventListener("load", updateHistogram);
+
+  </script>
+</body>
+
+</html>
