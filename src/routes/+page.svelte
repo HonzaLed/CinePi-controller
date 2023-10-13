@@ -3,15 +3,21 @@
 	import Iso from '$lib/Iso.svelte';
 	import ShutterAngle from '$lib/ShutterAngle.svelte';
 	import Fps from '$lib/Fps.svelte';
+	import Histogram from '$lib/Histogram.svelte';
+
 	import socket from '$lib/websocket.js';
+
 	import { onMount } from 'svelte';
+	import { writable } from 'svelte/store';
 
 	let hostname = '';
-	let srcOverride = 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/16x9_by_Pengo.svg/1920px-16x9_by_Pengo.svg.png';
-	let running = true;
-	let errorMessage = "";
-	let locked= false;
+	let srcOverride = ''; // src override for the stream, mainly for testing
+	let running = true; // If false, the app encountered a fatal error and can't continue
+	let errorMessage = ''; // If the app "crashes", show this error message
+	let locked = false; // Lock for the controls, so you don't mess up the settings while recording
 	let websocketErrorCount = 0;
+
+	const streamElement = writable();
 
 	let state = {
 		recording: false,
@@ -23,41 +29,50 @@
 	};
 
 	onMount(() => {
+		// Runs when the web app initializes
 		hostname = document.location.hostname;
+		srcOverride = 'http://' + hostname + ':8008/cam.mjpeg';
 
-		socket.errorNotifier.subscribe( (error) => {
-			if (error != "") {
+		socket.errorNotifier.subscribe((error) => {
+			// Subscribe to errors from websocket
+			if (error != '') {
 				running = false;
 				console.error('Got fatal error from websocket:', error);
-				errorMessage = "WebSocket error: " + error;
+				errorMessage = 'WebSocket error: ' + error;
 			}
 		});
-		socket.subscribe( (message) => {
-			console.log("Got new WebSocket message:", message);
+		socket.subscribe((message) => {
+			// Subsrice to new messages from websocket
+			console.log('Got new WebSocket message:', message);
 			try {
-				state = JSON.parse(message);
+				state = JSON.parse(message); // Update state
 			} catch {
-				console.warn("Could not update state from received websocket message!");
+				console.warn('Could not update state from received websocket message!');
 			}
 		});
 
-		socket.connect(`ws:${hostname}:8080/ws`);
+		socket.connect(`ws:${hostname}:8080/ws`); // Connect to the websocket
 	});
 
 	// State update (send data to API)
 	$: if (!socket.sendMessage(JSON.stringify(state))) {
-			if (websocketErrorCount > 5) {
-				running = false;
-				console.log("Got fatal error from websocket: Couldn't send update to the server 5 times!")
-				errorMessage = "WebSocket error: Couldn't send update to the server 5 times!";
-			}
-			console.warn("Could not send a state update!");
-			websocketErrorCount++;
+		// Check if the update got sent
+		// If we can't send an update to the server 5 times, stop the app and display the error message
+		if (websocketErrorCount > 5) {
+			running = false;
+			console.error("Got fatal error from websocket: Couldn't send update to the server 5 times!");
+			errorMessage = "WebSocket error: Couldn't send update to the server 5 times!";
+		}
+		// If we can't send an update, increment the error counter and log to the console
+		console.warn('Could not send a state update!');
+		websocketErrorCount++;
 	} else {
-		console.log("Sent update to the server!");
-		websocketErrorCount = 0;
+		// All OK
+		console.log('Sent update to the server!');
+		websocketErrorCount = 0; // If there were any previous errors, forget them
 	}
 
+	// Handle errors from stream, if fatal, show the error message and stop the app
 	// @ts-ignore
 	function handleStreamError(event) {
 		if (!event.detail.fatal) {
@@ -89,6 +104,7 @@
 		state.fps = fps;
 	}
 
+	// Handlers for record and lock button
 	function toogleRecord() {
 		state.recording = !state.recording;
 	}
@@ -103,7 +119,7 @@
 >
 	<div class="grid grid-cols-8 grid-rows-1 gap-0 min-h-screen">
 		<!-- Left side controls -->
-		<div class="grid grid-cols-1 gap-0 text-white bg-gray-950">
+		<div class="grid grid-cols-1 gap-0 text-white bg-gray-950 z-10">
 			<!-- Lock button -->
 			<button class="border border-1 border-gray-800 h-3/4" on:click={toogleLocked}>
 				<img
@@ -115,10 +131,11 @@
 			<!-- Shutter Angle -->
 			<ShutterAngle
 				shutterAngle={state.shutterAngle}
-				locked={locked}
+				{locked}
 				on:changeShutterAngle={handleChangeShutterAngle}
 			/>
-			<Fps fps={state.fps} locked={locked} on:changeFPS={handleChangeFPS} />
+			<!-- FPS -->
+			<Fps fps={state.fps} {locked} on:changeFPS={handleChangeFPS} />
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
 			<button class="border border-1 border-gray-800">6</button>
@@ -128,10 +145,10 @@
 
 		<!-- Stream image -->
 		<div class="stream-container col-span-6 place-self-center">
-			<Stream on:error={handleStreamError} {hostname} {srcOverride} />
+			<Stream on:error={handleStreamError} {hostname} {srcOverride} {streamElement} />
 		</div>
 		<!-- Right side controls -->
-		<div class="grid grid-cols-1 grid-rows-8 gap-0 text-white bg-gray-950">
+		<div class="grid grid-cols-1 grid-rows-8 gap-0 text-white bg-gray-950 z-10">
 			<!-- Record button -->
 			<button on:click={toogleRecord} class="border border-1 border-gray-800 h-3/4">
 				<img
@@ -145,10 +162,11 @@
 				iso={state.iso}
 				maxIso={state.maxIso}
 				minIso={state.minIso}
-				locked={locked}
+				{locked}
 				on:changeISO={handleChangeISO}
 			/>
-			<button class="border border-1 border-gray-800">3</button>
+			<!-- Histogram -->
+			<Histogram imageStore={streamElement} />
 			<button class="border border-1 border-gray-800">4</button>
 			<button class="border border-1 border-gray-800">5</button>
 			<button class="border border-1 border-gray-800">6</button>
@@ -158,7 +176,17 @@
 	</div>
 </div>
 
-<div class="text-white bg-black text-center min-h-screen items-center grid grid-rows-2" style="{running ? "display:none" : ""}">
-	<h1 class="self-center text-2xl"><b class="text-6xl">Client encountered a fatal error, can't continue!</b><br>Error: {errorMessage}</h1>
-	<button class="bg-gray-800 w-min mx-auto rounded-2xl p-2 border-gray-700 border-2 text-6xl" on:click={()=>{location.reload()}}>Refresh</button>
+<div
+	class="text-white bg-black text-center min-h-screen items-center grid grid-rows-2"
+	style={running ? 'display:none' : ''}
+>
+	<h1 class="self-center text-2xl">
+		<b class="text-6xl">Client encountered a fatal error, can't continue!</b><br />Error: {errorMessage}
+	</h1>
+	<button
+		class="bg-gray-800 w-min mx-auto rounded-2xl p-2 border-gray-700 border-2 text-6xl"
+		on:click={() => {
+			location.reload();
+		}}>Refresh</button
+	>
 </div>
