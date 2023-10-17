@@ -91,6 +91,7 @@
 	alt="Stream preview"
 	src="/ui/loading-spinner.gif"
 	on:load={(event) => {
+		// @ts-ignore
 		if (!event.target.src.endsWith('/ui/loading-spinner.gif')) {
 			imgElem.classList.add('border');
 			imgElem.classList.add('border-1');
