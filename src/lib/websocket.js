@@ -16,7 +16,7 @@ function connect(url) {
     if ("WebSocket" in window) {
         socket = new WebSocket(url);
         // Connection opened
-        socket.onopen = (event) => {
+        socket.onopen = () => {
             console.log("WebSocket connected!");
         }
 
@@ -24,13 +24,20 @@ function connect(url) {
         socket.onmessage = (event) => {
             messageStore.set(event.data);
         }
+        
+        // Report errors
+        socket.onerror = () => {
+            console.error("Error: WebSocket disconnected or didnt connect");
+            errorStore.set("WebSocket disconnected or didnt connect");
+        }
 
-        socket.onerror = (event) => {
-            console.error("Can't connect to the server!");
-            errorStore.set("Can't connect to the server!");
+        // We don't close connection, so if it got closed, it's an error
+        socket.onclose = () => {
+            console.error("Error: websocket disconnected!");
+            errorStore.set("WebSocket disconnected!");
         }
     } else {
-        console.error("This browser doesn't support websockets, can't run here!");
+        console.error("Error: This browser doesn't support websockets, can't run here!");
         errorStore.set("This browser doesn't support websockets, can't run here!");
     }
 }
@@ -44,13 +51,14 @@ function sendMessage(message) {
 		socket.send(message);
         return true;
 	}
+    return false;
 }
 
 export default {
 	subscribe: messageStore.subscribe,
 	sendMessage,
     connect,
-    socket: socket,
+    socket,
     errorNotifier: errorStore
 }
 
