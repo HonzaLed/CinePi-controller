@@ -37,8 +37,6 @@
 		fps: 24
 	};
 
-	let log = "";
-
 	onMount(async () => {
 		// Runs when the web app initializes
 		if (Capacitor.isNativePlatform()) {
@@ -63,7 +61,7 @@
 	 */
 	function initApp(hostnameArg) {
 		hostname = hostnameArg;
-		srcOverride = 'http://' + hostname + ':8008/cam.mjpeg';
+		// srcOverride = 'http://' + hostname + ':8008/cam.mjpeg';
 		socket.errorNotifier.subscribe((error) => {
 			// Subscribe to errors from websocket
 			if (error != '') {

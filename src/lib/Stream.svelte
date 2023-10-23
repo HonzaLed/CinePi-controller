@@ -32,9 +32,9 @@
 	 * @param {string} hostname
 	 */
 	function setMjpegSrc(hostname) {
-		if (imgElem.src === `http://${hostname}/cam.mjpeg` && hostname != '') {
+		if (imgElem.src !== `http://${hostname}:8008/cam.mjpeg` && hostname != '') {
 			// Only set the src if it hasn't been set yet
-			imgElem.src === `http://${hostname}/cam.mjpeg`;
+			imgElem.src = `http://${hostname}:8008/cam.mjpeg`;
 		}
 	}
 
@@ -57,9 +57,9 @@
 			return;
 		}
 
-		if (hostname==="") { return }
+		if (hostname==="") { return	}
 
-		fetch('http://' + hostname + ':8080/ping', {
+		fetch('http://' + hostname + ':8008/ping', {
 			method: 'GET',
 			mode: 'no-cors' // Add this line for no-cors mode
 		})
