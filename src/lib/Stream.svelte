@@ -4,25 +4,21 @@
 
 	const dispatch = createEventDispatcher();
 
-	export let hostname = '';
-	export let srcOverride = '';
-	/**
-	 * @type {import('svelte/store').Writable<HTMLImageElement>}
-	 */
+	/** @type {string} */ export let hostname = '';
+	/** @type {string} */ export let srcOverride = '';
+
+	/** @type {import('svelte/store').Writable<HTMLImageElement>} */
 	export let streamElement;
 
-	let maxRetries = 5;
-	let currentRetries = 0;
-	let currentPingRetries = 0;
-	/**
-	 * @type {number}
-	 */
+	/** @type {number} */ let maxRetries = 5;
+	/** @type {number} */ let currentRetries = 0;
+	/** @type {number} */ let currentPingRetries = 0;
+	
+	/** @type {NodeJS.Timeout} */
 	let checkInterval;
-	let checkTimeout = 5000; // 5 seconds for the activity check
+	/** @type {number} */ let checkTimeout = 5000; // 5 seconds for the activity check
 
-	/**
-	 * @type {HTMLImageElement}
-	 */
+	/** @type {HTMLImageElement} */
 	let imgElem;
 
 	onMount(() => {
@@ -60,6 +56,8 @@
 			imgElem.src = srcOverride;
 			return;
 		}
+
+		if (hostname==="") { return }
 
 		fetch('http://' + hostname + ':8080/ping', {
 			method: 'GET',

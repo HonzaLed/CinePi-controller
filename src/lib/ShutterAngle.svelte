@@ -26,6 +26,9 @@
 	 */
     let initialSwipeY = null;
 
+    /**
+	 * @param {number} newShutterAngle
+	 */
     function setNewShutterAngle(newShutterAngle) {
         if (!locked) {
             shutterAngle = newShutterAngle
@@ -84,7 +87,7 @@
         }
     };
 </script>
-<button class="border border-1 border-gray-800 -mt-8" on:touchstart={handleTouchStart} on:touchmove|preventDefault={handleTouchMove} on:click={handleClick}>
+<button class="border border-1 border-gray-800" on:touchstart={handleTouchStart} on:touchmove|preventDefault={handleTouchMove} on:click={handleClick}>
 	<p class="text-gray-500 text-sm"><b>Shutter angle</b></p>
 	<p class="text-2xl">{shutterAngle}°</p>
 </button>
